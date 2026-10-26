@@ -149,9 +149,15 @@ export class DiffusionCapability {
           diffusing: WRONG_TYPE,
         }),
       })
+      // A 2xx would mean the endpoint started a generation; drop it immediately
+      // and without reading the body, which for a streaming endpoint would
+      // otherwise run to completion and bill tokens.
+      if (response.ok) {
+        void response.body?.cancel().catch(() => {})
+        controller.abort(new Error('probe accepted; cancelled'))
+        return 'unknown'
+      }
       const body = (await response.text()).slice(0, MAX_BODY)
-      // A 2xx would mean the endpoint started a generation; drop it immediately.
-      if (response.ok) controller.abort(new Error('probe accepted; cancelled'))
       return classifyProbe(response.status, body)
     } catch (_probeFailed) {
       return 'unknown'
