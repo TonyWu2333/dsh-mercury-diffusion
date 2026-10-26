@@ -76,9 +76,11 @@ function wireMessage(message: RequestMessage): WireMessage | undefined {
     case 'tool':
       // An empty result still answers its call id.
       return { role: 'tool', tool_call_id: message.toolCallId, content: inputText(message.content, 'tool-result') }
-    // Request assembly removes developer messages for a route without a tool update mode.
+    // The route has no tool-update mode, so the complete current declarations
+    // are sent in `tools`; in-history tool changes have no wire meaning. dsh's
+    // own projection strips these, but it runs after this interceptor.
     case 'developer':
-      return unsupported('developer messages')
+      return undefined
     default:
       return assertNever(message)
   }

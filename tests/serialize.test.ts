@@ -45,6 +45,20 @@ describe('serialize', () => {
     assert.deepEqual(body.tools, [{ type: 'function', function: { name: 'bash', description: 'Run a command', parameters: { type: 'object' } } }])
   })
 
+  it('omits developer tool-update messages because the complete tools are sent', () => {
+    const body = serialize(request([
+      { role: 'user', content: [{ type: 'text', text: 'hi' }] },
+      { role: 'developer', content: [{ type: 'tool-addition', toolName: 'bash' }] },
+    ], {
+      tools: [{ name: 'bash', description: 'Run a command', parameters: { type: 'object' } }],
+    }), { diffusing: true })
+    assert.deepEqual(body.messages, [{ role: 'user', content: 'hi' }])
+    assert.deepEqual(body.tools, [{
+      type: 'function',
+      function: { name: 'bash', description: 'Run a command', parameters: { type: 'object' } },
+    }])
+  })
+
   it('rejects values Mercury cannot honor', () => {
     const user = [{ role: 'user', content: [{ type: 'text', text: 'hi' }] }]
     assert.throws(() => serialize(request(user, { temperature: 0.2 }), { diffusing: false }),
